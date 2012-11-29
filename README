@@ -1,0 +1,42 @@
+makedoku: open source non-interactive sudoku generator and solver. It uses opencl or openmp.
+
+Current web home: http://sourceforge.net/projects/makedoku
+
+
+Features:
+
+-it uses opencl or openmp to solve and generate grids
+-each generated grid has an unique solution
+-option to specify number of givens
+-option to iterate or recurse when solving/generating grids
+
+
+Compile:
+
+To compile with OpenSSL random number generator you need the following library:
+libssl
+
+To compile with OpenCL you need:
+NVIDIA_GPU_Computing_SDK (see https://developer.nvidia.com/cuda-downloads)
+
+
+To compile the project just type following command:
+
+	$ make
+
+or you can also compile OpenCL version (only iterative):
+
+	$ make -f Makefile.opencl
+
+or OpenMP version (using gcc incorporated feature):
+
+	$ make -f Makefile.openmp
+
+finally, to use profiling (with gprof):
+
+	$ make -f Makefile.gprof
+
+
+Use:
+
+You can get syntax by typing makedoku.

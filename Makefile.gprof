@@ -1,0 +1,14 @@
+CC=gcc
+CFLAGS=-pg -O2 -Wall -g -lc -fprofile-values -fprofile-generate -fprofile-correction -fprofile-use -fprofile-arcs -ftest-coverage --coverage
+CFLAGS+=-DHAVE_OPENSSL
+#CFLAGS+=-fopenmp
+#CFLAGS+=-DDEBUG
+LDFLAGS=-lssl
+SOURCES=sudo.c resolve_iterative.c resolve_recursive.c resolve.c main.c
+EXEC=makedoku
+
+all:
+	$(CC) $(CFLAGS) $(LDFLAGS) $(SOURCES) -o $(EXEC)
+
+clean:
+	rm -f *.o $(EXEC)
