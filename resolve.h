@@ -38,7 +38,7 @@
 #endif
 #include "sudo.h"
 
-#define RESET_GRID(m, dim) memset(m, 0, (dim)*sizeof(unsigned char))
+#define RESET_GRID(m, dimen) memset(m, 0, (dimen)*sizeof(unsigned char))
 
 
 inline int get_initial_number(unsigned char *grid);

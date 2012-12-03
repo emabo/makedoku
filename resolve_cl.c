@@ -194,7 +194,7 @@ static void create_kernel(void)
 {
 	cl_int ciErrNum;
 	// size of memory required to store the matrix
-	const size_t mem_size = sizeof(cl_uchar)*DIM3*DIM_LIST;
+	const size_t mem_size = sizeof(cl_uchar)*dim.extgrid*DIM_LIST;
 
 	// allocate device memory and copy host to device memory
 	grid_in = clCreateBuffer(cxGPUContext, CL_MEM_READ_ONLY, mem_size, NULL, &ciErrNum);
@@ -224,7 +224,7 @@ void resolve_gpu(unsigned char *grid_list_in, unsigned char *grid_list_out, int 
 	cl_int ciErrNum;
 	size_t szGlobalWorkSize[2], szLocalWorkSize[2];
 	// size of memory required to store the matrix
-	const size_t mem_size = sizeof(cl_uchar)*DIM3*num;
+	const size_t mem_size = sizeof(cl_uchar)*dim.extgrid*num;
 
 	// write to device
 	ciErrNum = clEnqueueWriteBuffer(cqCommandQueue, grid_in, CL_FALSE, 0, mem_size, grid_list_in, 0, NULL, NULL);
@@ -240,7 +240,7 @@ void resolve_gpu(unsigned char *grid_list_in, unsigned char *grid_list_out, int 
 	szLocalWorkSize[0] = BLOCK_DIM;
 	szLocalWorkSize[1] = BLOCK_DIM;
 	szGlobalWorkSize[0] = shrRoundUp(BLOCK_DIM, num);
-	szGlobalWorkSize[1] = DIM*BLOCK_DIM;
+	szGlobalWorkSize[1] = dim.grid*BLOCK_DIM;
 
 	// execute the kernel
 	ciErrNum = clEnqueueNDRangeKernel(cqCommandQueue, ckKernel, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, NULL, NULL);

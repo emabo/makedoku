@@ -43,22 +43,22 @@ void resolve_cpu(unsigned char *grid_list_in, unsigned char *grid_list_out, int 
 	int l, x, y, z, t, z_out;
 
 	for (l = 0; l < num; l++) {
-		t = l*DIM3;
-		for (x = 0; x < DIM; x++) {
-			for (y = 0; y < DIM; y++) {
-				p_in = grid_list_in+t+x*DIM2+y*DIM;
-				p_out = grid_list_out+t+x*DIM2+y*DIM;
+		t = l*dim.extgrid;
+		for (x = 0; x < dim.grid; x++) {
+			for (y = 0; y < dim.grid; y++) {
+				p_in = grid_list_in+t+x*dim.number+y*dim.grid;
+				p_out = grid_list_out+t+x*dim.number+y*dim.grid;
 				if (p_in[0]) {
 					if (!p_in[1]) {
 						p_out[0] = p_in[0];
 						p_out[1] = 0;
 					} else if (p_in[1] != 255) {
-						for (z = 0, z_out = 0; z < DIM && p_in[z]; z++)
+						for (z = 0, z_out = 0; z < dim.grid && p_in[z]; z++)
 							if (is_valid_number(grid_list_in+t, p_in[z], x, y))
 								p_out[z_out++] = p_in[z];
 						if (z_out == 1)
 							p_out[1] = 255;
-						else if (z_out < DIM)
+						else if (z_out < dim.grid)
 							p_out[z_out] = 0;
 					} else {
 						if (is_valid_number(grid_list_in+t, *p_in, x, y)) {
@@ -68,12 +68,12 @@ void resolve_cpu(unsigned char *grid_list_in, unsigned char *grid_list_out, int 
 							p_out[0] = 0;
 					}
 				} else {
-					for (z = 1, z_out = 0; z <= DIM; z++)
+					for (z = 1, z_out = 0; z <= dim.grid; z++)
 						if (is_valid_number(grid_list_in+t, z, x, y))
 							p_out[z_out++] = z;
 					if (z_out == 1)
 						p_out[1] = 255;
-					else if (z_out < DIM)
+					else if (z_out < dim.grid)
 						p_out[z_out] = 0;
 				}
 			}
@@ -86,9 +86,9 @@ int check_grid_list(unsigned char *grid_list, int *xm, int *ym)
 	unsigned char *p;
 	int x, y, res = 1;
 
-	for (x = 0; x < DIM; x++) {
-		for (y = 0; y < DIM; y++) {
-			p = grid_list+x*DIM2+y*DIM;
+	for (x = 0; x < dim.grid; x++) {
+		for (y = 0; y < dim.grid; y++) {
+			p = grid_list+x*dim.number+y*dim.grid;
 			if (!p[0])
 				return 0;
 			else if (p[1] == 255)
@@ -109,15 +109,15 @@ int expand(unsigned char *grid_list, unsigned char *grid, int *num, int x, int y
 	unsigned char *p_out;
 	int z, i;
 
-	i = x*DIM2+y*DIM;
+	i = x*dim.number+y*dim.grid;
 
-	for (z = 0; z < DIM && grid[i+z]; z++) {
-		p_out = grid_list+(*num)*DIM3;
+	for (z = 0; z < dim.grid && grid[i+z]; z++) {
+		p_out = grid_list+(*num)*dim.extgrid;
 		if (++(*num) >= DIM_LIST) {
 			printf("grid list too long\n");
 			return -1;
 		}
-		memcpy(p_out, grid, DIM3*sizeof(unsigned char));
+		memcpy(p_out, grid, dim.extgrid*sizeof(unsigned char));
 		p_out[i] = grid[i+z];
 		p_out[i+1] = 0;
 	}
@@ -127,11 +127,11 @@ int expand(unsigned char *grid_list, unsigned char *grid, int *num, int x, int y
 
 int iterative_resolve(unsigned char *grid, unsigned char *solution, int unique_sol, int *sol_depth)
 {
-	unsigned char grid_list_in[DIM3*DIM_LIST]={0}, grid_list_out[DIM3*DIM_LIST]={0};
+	unsigned char grid_list_in[MAX_DIM3*DIM_LIST], grid_list_out[MAX_DIM3*DIM_LIST];
 	int res, num_in, num_out, num_sol = 0, l, x = 0, y = 0;
 
 	*sol_depth = 0;
-	memcpy(grid_list_in, grid, DIM3*sizeof(unsigned char));
+	memcpy(grid_list_in, grid, dim.extgrid*sizeof(unsigned char));
 	num_in = 1;
 
 	do {
@@ -144,31 +144,35 @@ int iterative_resolve(unsigned char *grid, unsigned char *solution, int unique_s
 		num_out = num_in;
 		num_in = 0;
 		for (l = 0; l < num_out; l++) {
-			if ((res = check_grid_list(grid_list_out+l*DIM3, &x, &y)) == 0)
+			if ((res = check_grid_list(grid_list_out+l*dim.extgrid, &x, &y)) == 0)
 				continue;
 			switch (res) {
 				case 1:
 					num_sol++;
-					if (!check_solution(grid_list_out+l*DIM3, grid)) {
+					if (!check_solution(grid_list_out+l*dim.extgrid, grid)) {
 						print_table(grid, 0,0);
-						print_table(grid_list_out+l*DIM3, 0,0);
+						print_table(grid_list_out+l*dim.extgrid, 0,0);
 						printf("error: final solution not correct\n");
-						return -1;
+						num_sol = -1;
+						goto Exit;
 					}
 					if (num_sol > 1 && unique_sol)
-						return num_sol;
+						goto Exit;
 					else if (num_sol == 1)
-						memcpy(solution, grid_list_out+l*DIM3, DIM3*sizeof(unsigned char));
+						memcpy(solution, grid_list_out+l*dim.extgrid, dim.extgrid*sizeof(unsigned char));
 					break;
 				case 2:
-					if (expand(grid_list_in, grid_list_out+l*DIM3, &num_in, x, y))
-						return -1;
+					if (expand(grid_list_in, grid_list_out+l*dim.extgrid, &num_in, x, y)) {
+						num_sol = -1;
+						goto Exit;
+					}
 					break;
 				default:
-					memcpy(grid_list_in+num_in*DIM3, grid_list_out+l*DIM3, DIM3*sizeof(unsigned char));
+					memcpy(grid_list_in+num_in*dim.extgrid, grid_list_out+l*dim.extgrid, dim.extgrid*sizeof(unsigned char));
 					if (++num_in >= DIM_LIST) {
 						printf("grid list too long\n");
-						return -1;
+						num_sol = -1;
+						goto Exit;
 					}
 					break;
 			}
@@ -176,6 +180,7 @@ int iterative_resolve(unsigned char *grid, unsigned char *solution, int unique_s
 		(*sol_depth)++;
 	} while (num_in);
 
+Exit:
 	return num_sol;
 }
 

@@ -39,16 +39,16 @@
 
 struct backup_str {
 	int x, y;
-	unsigned char z[DIM];
+	unsigned char z[MAX_DIM];
 };
 
 inline int compact_number(unsigned char *m)
 {
 	int z, z_full;
 
-	for (z = 0; z < DIM && m[z]; z++);
+	for (z = 0; z < dim.grid && m[z]; z++);
 
-	for (z_full = z+1; z_full < DIM; z_full++) {
+	for (z_full = z+1; z_full < dim.grid; z_full++) {
 		if (m[z_full]) {
 			m[z++] = m[z_full];
 			m[z_full] = 0;
@@ -67,16 +67,16 @@ int resolve(unsigned char *m, int *xn, int *yn)
 		*xn = *yn = -1;
 		modified = 0;
 		res = 1;
-		for (x = 0; x < DIM; x++) {
-			for (y = 0; y < DIM; y++) {
-				p = m+x*DIM2+y*DIM;
+		for (x = 0; x < dim.grid; x++) {
+			for (y = 0; y < dim.grid; y++) {
+				p = m+x*dim.number+y*dim.grid;
 				if (*p) {
 					if (!*(p+1))
 						continue;
 
 					res = 0;
 					change = 0;
-					for (z = 0; z < DIM && p[z]; z++) {
+					for (z = 0; z < dim.grid && p[z]; z++) {
 						if (!is_valid_number(m, p[z], x, y)) {
 							change = 1;
 							p[z] = 0;
@@ -99,7 +99,7 @@ int resolve(unsigned char *m, int *xn, int *yn)
 				} else {
 					res = 0;
 					z = 0;
-					for (num = 1; num <= DIM; num++) {
+					for (num = 1; num <= dim.grid; num++) {
 						if (is_valid_number(m, num, x, y)) {
 							*p++ = num;
 							z++;
@@ -126,11 +126,11 @@ inline void backup_solve_table(struct backup_str *to, unsigned char *from)
 {
 	int x, y, i = 0, j;
 
-	for (x = 0; x < DIM; x++)
-		for (y = 0; y < DIM; y++) {
-			j = x*DIM2+y*DIM;
+	for (x = 0; x < dim.grid; x++)
+		for (y = 0; y < dim.grid; y++) {
+			j = x*dim.number+y*dim.grid;
 			if (from[j+1]) {
-				memcpy(to[i].z, from+j, DIM*sizeof(unsigned char));
+				memcpy(to[i].z, from+j, dim.grid*sizeof(unsigned char));
 				to[i].x = x;
 				to[i++].y = y;
 			}
@@ -143,17 +143,17 @@ inline void restore_solve_table(unsigned char *to, struct backup_str *from)
 	int i;
 
 	for (i = 0; from[i].x >= 0; i++)
-		memcpy(to+from[i].x*DIM2+from[i].y*DIM, from[i].z, DIM*sizeof(unsigned char));
+		memcpy(to+from[i].x*dim.number+from[i].y*dim.grid, from[i].z, dim.grid*sizeof(unsigned char));
 }
 
 int recursive_resolve(unsigned char *grid_solve, unsigned char *grid, unsigned char *solution, int unique_sol, int depth, int *sol_depth)
 {
-	struct backup_str grid_backup[DIM2];
+	struct backup_str grid_backup[MAX_DIM2];
 	int res, x, y, z, solved;
 	unsigned char *p;
 
 	if (!depth)
-		memcpy(grid_solve, grid, DIM3*sizeof(unsigned char));
+		memcpy(grid_solve, grid, dim.extgrid*sizeof(unsigned char));
 
 	solved = resolve(grid_solve, &x, &y);
 	if (solved == -1)
@@ -165,7 +165,7 @@ int recursive_resolve(unsigned char *grid_solve, unsigned char *grid, unsigned c
 			printf("error: final solution not correct\n");
 			return -1;
 		}
-		memcpy(solution, grid_solve, DIM3*sizeof(unsigned char));
+		memcpy(solution, grid_solve, dim.extgrid*sizeof(unsigned char));
 		if (depth > *sol_depth)
 			*sol_depth = depth;
 #ifdef DEBUG
@@ -176,13 +176,13 @@ int recursive_resolve(unsigned char *grid_solve, unsigned char *grid, unsigned c
 
 	z = 0;
 	res = 0;
-	p = grid_solve+x*DIM2+y*DIM;
+	p = grid_solve+x*dim.number+y*dim.grid;
 
 	backup_solve_table(grid_backup, grid_solve);
 
-	while (z < DIM && p[z]) {
+	while (z < dim.grid && p[z]) {
 		*p = p[z++];
-		memset(p+1, 0, (DIM-1)*sizeof(unsigned char));
+		memset(p+1, 0, (dim.grid-1)*sizeof(unsigned char));
 
 #ifdef DEBUG
 		printf("fork solution depth=%d %d,%d->%d\n", depth+1, x, y, z);
@@ -196,7 +196,7 @@ int recursive_resolve(unsigned char *grid_solve, unsigned char *grid, unsigned c
 			return res;
 		}
 
-		if (z < DIM)
+		if (z < dim.grid)
 			restore_solve_table(grid_solve, grid_backup);
 	}
 

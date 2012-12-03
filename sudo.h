@@ -30,16 +30,29 @@
  * files in the program, then also delete it here.
  *---------------------------------------------------------------------------*/
 
+#ifndef _SUDO_H_
+#define _SUDO_H_
 
-#define DIM_SQUARE 3
-#define DIM 9 // (DIM_SQUARE*DIM_SQUARE)
-#define DIM2 81 // (DIM*DIM)
-#define DIM3 729 // (DIM*DIM*DIM)
+#define MAX_DIM_SQUARE 4
+#define MAX_DIM 16 // (DIM_SQUARE*DIM_SQUARE)
+#define MAX_DIM2 256 // (DIM*DIM)
+#define MAX_DIM3 4096 // (DIM*DIM*DIM)
 
 #define DIM_LIST 5000
 
-#define GRID(matr,x,y,z) matr[(x)*DIM2+(y)*DIM+(z)]
+#define GRID(matr,x,y,z) matr[(x)*dim.number+(y)*dim.grid+(z)]
 
+typedef struct {
+	int squarex, squarey;
+	int grid;
+	int number;
+	int extgrid;
+} dim_t;
+
+extern dim_t dim;
 
 inline int is_valid_number(unsigned char *m, int num, int x, int y);
 
+void compute_dimensions(int sqx, int sqy);
+
+#endif

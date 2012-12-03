@@ -33,37 +33,48 @@
 #include "sudo.h"
 
 
+dim_t dim = {0};
+
 inline int is_valid_number(unsigned char *m, int num, int x, int y)
 {
 	int j, i, start_i, start_j;
 
-	for (j = 0; j < DIM; j++)
+	for (j = 0; j < dim.grid; j++)
 		if (j != y && GRID(m,x,j,0) == num && (!GRID(m,x,j,1) || GRID(m,x,j,1) == 255))
 			return 0;
 
-	for (i = 0; i < DIM; i++)
+	for (i = 0; i < dim.grid; i++)
 		if (i != x && GRID(m,i,y,0) == num && (!GRID(m,i,y,1) || GRID(m,i,y,1) == 255))
 			return 0;
 
-	start_i = (x / DIM_SQUARE) * DIM_SQUARE;
-	start_j = (y / DIM_SQUARE) * DIM_SQUARE;
+	start_i = (x / dim.squarex) * dim.squarex;
+	start_j = (y / dim.squarey) * dim.squarey;
 
 	for (i = start_i; i < x; i++)
 		for (j = start_j; j < y; j++)
 			if (GRID(m,i,j,0) == num && (!GRID(m,i,j,1) || GRID(m,i,j,1) == 255))
 				return 0;
 	for (i = start_i; i < x; i++)
-		for (j = y+1; j < start_j + DIM_SQUARE; j++)
+		for (j = y+1; j < start_j + dim.squarey; j++)
 			if (GRID(m,i,j,0) == num && (!GRID(m,i,j,1) || GRID(m,i,j,1) == 255))
 				return 0;
-	for (i = x+1; i < start_i + DIM_SQUARE; i++)
+	for (i = x+1; i < start_i + dim.squarex; i++)
 		for (j = start_j; j < y; j++)
 			if (GRID(m,i,j,0) == num && (!GRID(m,i,j,1) || GRID(m,i,j,1) == 255))
 				return 0;
-	for (i = x+1; i < start_i + DIM_SQUARE; i++)
-		for (j = y+1; j < start_j + DIM_SQUARE; j++)
+	for (i = x+1; i < start_i + dim.squarex; i++)
+		for (j = y+1; j < start_j + dim.squarey; j++)
 			if (GRID(m,i,j,0) == num && (!GRID(m,i,j,1) || GRID(m,i,j,1) == 255))
 				return 0;
 
 	return 1;
+}
+
+void compute_dimensions(int sqx, int sqy)
+{
+	dim.squarex = sqx;
+	dim.squarey = sqy;
+	dim.grid = sqx * sqy;
+	dim.number = dim.grid * dim.grid;
+	dim.extgrid = dim.number * dim.grid;
 }

@@ -61,7 +61,7 @@ FILE *input_file = NULL;
 
 // results
 int sol_number[MAX_SOLUTION];
-int start_number[DIM2+1];
+int start_number[MAX_DIM2+1];
 int sol_depth_number[MAX_DEPTH];
 
 
@@ -79,11 +79,11 @@ int fread_table(unsigned char *grid)
 		return 0;
 	}
 
-	RESET_GRID(grid, DIM3);
+	RESET_GRID(grid, dim.extgrid);
 
-	for (x = 0; x < DIM; x++)
-		for (y = 0; y < DIM; y++) {
-			i = x*DIM+y;
+	for (x = 0; x < dim.grid; x++)
+		for (y = 0; y < dim.grid; y++) {
+			i = x*dim.grid+y;
 			GRID(grid,x,y,0) = isdigit(line[i]) ? line[i]-'0' : 0;
 		}
 
@@ -96,13 +96,13 @@ void fwrite_table(unsigned char *grid, unsigned char *sol, int i)
 {
 	int x, y;
 
-	for (x = 0; x < DIM; x++)
-		for (y = 0; y < DIM; y++)
+	for (x = 0; x < dim.grid; x++)
+		for (y = 0; y < dim.grid; y++)
 			fprintf(output_file[i], "%d", GRID(grid,x,y,0));
 	fprintf(output_file[i], ">");
 
-	for (x = 0; x < DIM; x++)
-		for (y = 0; y < DIM; y++)
+	for (x = 0; x < dim.grid; x++)
+		for (y = 0; y < dim.grid; y++)
 			fprintf(output_file[i], "%d", GRID(sol,x,y,0));
 	fprintf(output_file[i], "\n");
 }
@@ -153,7 +153,7 @@ void print_result(void)
 		return;
 
 	fprintf(fo, "Initial number of givens:\n");
-	for (i = 0; i < DIM2+1; i++)
+	for (i = 0; i < dim.number+1; i++)
 		fprintf(fo, "%d->%d\n", i, start_number[i]);
 
 	fprintf(fo, "Number of final solutions per grid\n");
@@ -169,7 +169,7 @@ void print_result(void)
 
 int main(int argc, char **argv)
 {
-	int num_sudo = 0, num_threads = 1, shift_argv = 0;
+	int num_sudo = 0, num_threads = 1, argv_idx = 1, sqx, sqy;
 
 	if (argc < 3) {
 		printf("makedoku %s, open source non-interactive sudoku generator and solver.\n", MD_VERSION);
@@ -177,7 +177,8 @@ int main(int argc, char **argv)
 		printf("-r <min> <max>\trandom generated grids, specify minimum and maximum number of givens.\n");
 		printf("-f <filename>\tsolve grids loaded from filename.\n\t\tFilename is a text file where lines represent grids to solve. Each line is a string of 81 characters,\n\t\twhere a given is a digit from 1 to 9 and whatever else character is a solution to find.\n");
 		printf("-n <max>\tmaximum number of grids to generate or load from file.\n");
-		printf("-i\t\tif this option is present use iterative procedure, otherwise recursive one.\n\t\tWith OpenCL present the procedure is always iterative by default.\n\n");
+		printf("-i\t\tif this option is present use iterative procedure, otherwise recursive one.\n\t\tWith OpenCL present the procedure is always iterative by default.\n");
+		printf("-d <x> <y>\tspecify (X,Y) size of the sub grid (default value is 3x3).\n\n");
 		printf("NOTE: -r and -n are mutually exclusive, but one of them has to be present. -f is mandatory.\n");
 		printf("\tResolved output grids are saved in main0.sud, main1.sud, and main2.sud\n");
 		printf("\tdepending on number of cycles or maximum recursion depth reached while solving.\n\n");
@@ -189,22 +190,24 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if (!strcmp(argv[1], "-f")) {
+	if (!strcmp(argv[argv_idx], "-f")) {
 		random_gen = 0;
-		input_filename = argv[2];
-	} else if (!strcmp(argv[1], "-r")) {
+		input_filename = argv[argv_idx+1];
+		argv_idx += 2;
+	} else if (!strcmp(argv[argv_idx], "-r")) {
 		random_gen = 1;
-		initial_rand_num_min = atoi(argv[2]);
-		initial_rand_num_max = atoi(argv[3]);
-		shift_argv = 1;
+		initial_rand_num_min = atoi(argv[argv_idx+1]);
+		initial_rand_num_max = atoi(argv[argv_idx+2]);
+		argv_idx += 3;
 		printf("Initial random number of givens, min and max: %d, %d\n", initial_rand_num_min, initial_rand_num_max);
 	} else {
 		printf("error: wrong parameter, first one has to be -r or -f\n");
 		return 1;
 	}
 
-	if ((argc >= 5+shift_argv) && !strcmp(argv[3+shift_argv], "-n")) {
-		max_sudo = atoi(argv[4+shift_argv]);
+	if ((argc >= argv_idx+2) && !strcmp(argv[argv_idx], "-n")) {
+		max_sudo = atoi(argv[argv_idx+1]);
+		argv_idx += 2;
 		printf("Maximum number of grids: %d\n", max_sudo);
 	} else {
 		printf("error: wrong parameter, there should be -n\n");
@@ -214,11 +217,21 @@ int main(int argc, char **argv)
 #ifdef OPENCL
 	iterative = 1;
 #else
-	if ((argc == 6+shift_argv) && !strcmp(argv[5+shift_argv], "-i"))
+	if ((argc >= argv_idx+2) && !strcmp(argv[argv_idx], "-i")) {
 		iterative = 1;
-	else
+		argv_idx += 2;
+	} else
 		iterative = 0;
 #endif
+
+	if ((argc >= argv_idx+2) && !strcmp(argv[argv_idx], "-d")) {
+		sqx = atoi(argv[argv_idx+1]);
+		sqy = atoi(argv[argv_idx+1]);
+		argv_idx += 2;
+	} else
+		sqx = sqy = 3;
+
+	compute_dimensions(sqx, sqy);
 
 	if (open_files()) {
 		printf("error: open files\n");
@@ -236,7 +249,7 @@ int main(int argc, char **argv)
 #endif
 	for (num_sudo = 0; num_sudo < max_sudo; num_sudo++) {
 		int res = 0, error = 0, init_num = 0, sol_depth;
-		unsigned char grid[DIM3], solution[DIM3], grid_solve[DIM3];
+		unsigned char grid[MAX_DIM3], solution[MAX_DIM3], grid_solve[MAX_DIM3];
 
 #ifdef _OPENMP
 		if (num_sudo == 0) {
