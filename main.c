@@ -218,17 +218,21 @@ int main(int argc, char **argv)
 #ifdef OPENCL
 	iterative = 1;
 #else
-	if ((argc >= argv_idx+2) && !strcmp(argv[argv_idx], "-i")) {
+	if ((argc >= argv_idx+1) && !strcmp(argv[argv_idx], "-i")) {
 		iterative = 1;
-		argv_idx += 2;
+		argv_idx += 1;
 	} else
 		iterative = 0;
 #endif
 
-	if ((argc >= argv_idx+2) && !strcmp(argv[argv_idx], "-d")) {
+	if ((argc >= argv_idx+3) && !strcmp(argv[argv_idx], "-d")) {
 		sqx = atoi(argv[argv_idx+1]);
-		sqy = atoi(argv[argv_idx+1]);
-		argv_idx += 2;
+		sqy = atoi(argv[argv_idx+2]);
+		if (sqx < 1 || sqx > 7 || sqy < 1 || sqy > 7) {
+			printf("error: subgrid size out of range. Accepted values are from 1 to 7.\n");
+			return 1;
+		}
+		argv_idx += 3;
 	} else
 		sqx = sqy = 3;
 
