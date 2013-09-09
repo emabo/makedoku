@@ -42,6 +42,11 @@
 
 #define GRID(matr,x,y,z) matr[(x)*dim.number+(y)*dim.grid+(z)]
 
+#define ASCII2INT(ascii) ((ascii)>'9' ? ((ascii)>'Z' ? (ascii)-'a'+36 : (ascii)-'A'+10) : (ascii)-'0')
+#define INT2ASCII(i) ((i)>9 ? ((i)>35 ? (i)-36+'a' : (i)-10+'A') : (i)+'0')
+#define ISGIVEN(ascii) ((ascii) != ' ' && (ascii) != '0')
+
+
 typedef struct {
 	int squarex, squarey;
 	int grid;

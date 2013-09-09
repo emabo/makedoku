@@ -84,7 +84,7 @@ int fread_table(unsigned char *grid)
 	for (x = 0; x < dim.grid; x++)
 		for (y = 0; y < dim.grid; y++) {
 			i = x*dim.grid+y;
-			GRID(grid,x,y,0) = isdigit(line[i]) ? line[i]-'0' : 0;
+			GRID(grid,x,y,0) = ISGIVEN(line[i]) ? ASCII2INT(line[i]) : 0;
 		}
 
 	free(line);
@@ -98,12 +98,12 @@ void fwrite_table(unsigned char *grid, unsigned char *sol, int i)
 
 	for (x = 0; x < dim.grid; x++)
 		for (y = 0; y < dim.grid; y++)
-			fprintf(output_file[i], "%d", GRID(grid,x,y,0));
+			fprintf(output_file[i], "%c", INT2ASCII(GRID(grid,x,y,0)));
 	fprintf(output_file[i], ">");
 
 	for (x = 0; x < dim.grid; x++)
 		for (y = 0; y < dim.grid; y++)
-			fprintf(output_file[i], "%d", GRID(sol,x,y,0));
+			fprintf(output_file[i], "%c", INT2ASCII(GRID(sol,x,y,0)));
 	fprintf(output_file[i], "\n");
 }
 

@@ -43,7 +43,7 @@ void print_table(unsigned char *grid, int single_line, int space)
 
 	for (x = 0; x < dim.grid; x++) {
 		for (y = 0; y < dim.grid; y++)
-			printf("%c", GRID(grid,x,y,0) ? (GRID(grid,x,y,0) == 255?'*':GRID(grid,x,y,0)+'0') : (space?' ':'0'));
+			printf("%c", GRID(grid,x,y,0) ? (GRID(grid,x,y,0) == 255?'*':INT2ASCII(GRID(grid,x,y,0))) : (space?' ':'0'));
 		if (!single_line)
 			printf("\n");
 	}
@@ -57,7 +57,7 @@ void print_grid_table(unsigned char *grid)
 	for (x = 0; x < dim.grid; x++) {
 		for (y = 0; y < dim.grid; y++) {
 			for (z = 0; z < dim.grid; z++)
-				printf("%c", GRID(grid,x,y,z) ? (GRID(grid,x,y,z) == 255?'*':GRID(grid,x,y,z)+'0') : ' ');
+				printf("%c", GRID(grid,x,y,z) ? (GRID(grid,x,y,z) == 255?'*':INT2ASCII(GRID(grid,x,y,z))) : ' ');
 			printf(" ");
 		}
 		printf("\n");
