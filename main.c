@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- * Copyright (C) 2012 - Emanuele Bovisio
+ * Copyright (C) 2012, 2013 - Emanuele Bovisio
  *
  * This file is part of makedoku.
  *
@@ -178,12 +178,13 @@ int main(int argc, char **argv)
 		printf("-f <filename>\tsolve grids loaded from filename.\n\t\tFilename is a text file where lines represent grids to solve. Each line is a string of 81 characters,\n\t\twhere a given is a digit from 1 to 9 and whatever else character is a solution to find.\n");
 		printf("-n <max>\tmaximum number of grids to generate or load from file.\n");
 		printf("-i\t\tif this option is present use iterative procedure, otherwise recursive one.\n\t\tWith OpenCL present the procedure is always iterative by default.\n");
-		printf("-d <x> <y>\tspecify (X,Y) size of the sub grid (default value is 3x3).\n\n");
-		printf("NOTE: -r and -n are mutually exclusive, but one of them has to be present. -f is mandatory.\n");
+		printf("-d <x> <y>\tspecify (X,Y) size of the sub grid (default is 3x3, min and max are 1 and 7).\n\n");
+		printf("NOTE: -r and -f are mutually exclusive, but one of them has to be present.\n");
+		printf("\t-n is mandatory if -r is specified, otherwise it is computed from file size.\n");
 		printf("\tResolved output grids are saved in main0.sud, main1.sud, and main2.sud\n");
 		printf("\tdepending on number of cycles or maximum recursion depth reached while solving.\n\n");
 
-		printf("makedoku Copyright (C) 2012 Emanuele Bovisio\n");
+		printf("makedoku Copyright (C) 2012, 2013 Emanuele Bovisio\n");
 		printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
 		printf("This is free software, and you are welcome to redistribute it under certain conditions.\n");
 		printf("See the GNU General Public License version 3 or later for more details.\n");

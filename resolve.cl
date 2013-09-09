@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
- * Copyright (C) 2012 - Emanuele Bovisio
+ * Copyright (C) 2012, 2013 - Emanuele Bovisio
  *
  * This file is part of makedoku.
  *
