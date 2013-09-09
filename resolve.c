@@ -100,31 +100,43 @@ int random_index(void)
 
 void random_table(unsigned char *grid, int num_min, int num_max)
 {
-	int x, y, val, num, i = 0;
-	int used[MAX_DIM] = {0};
+#define MAX_ATTEMPT 1000
+	int x, y, val, num, i, try, ko;
+	int used[MAX_DIM];
 
 	if (num_min < 1 || num_max > dim.number || num_max < num_min)
 		return;
 
-	RESET_GRID(grid, dim.extgrid);
+	do {
+		i = 0;
+		try = 0;
+		ko = 0;
+		RESET_GRID(grid, dim.extgrid);
+		memset(used, 0, (MAX_DIM)*sizeof(int));
 
-	num = random_start_number(num_min, num_max);
-	while (num) {
-		x = random_index();
-		y = random_index();
-		if (!GRID(grid,x,y,0)) {
-			do {
-				val = random_number();
-			} while (used[val-1] && i < dim.grid-1); 
+		num = random_start_number(num_min, num_max);
+		while (num) {
+			x = random_index();
+			y = random_index();
+			if (!GRID(grid,x,y,0)) {
+				do {
+					val = random_number();
+				} while (used[val-1] && i < dim.grid-1); 
 
-			if (is_valid_number(grid, val, x, y)) {
-				GRID(grid,x,y,0) = val;
-				num--;
-				i++;
-				used[val-1] = 1;
+				if (try++ > MAX_ATTEMPT) {
+					ko = 1;
+					break;
+				}
+
+				if (is_valid_number(grid, val, x, y)) {
+					GRID(grid,x,y,0) = val;
+					num--;
+					i++;
+					used[val-1] = 1;
+				}
 			}
 		}
-	}
+	} while (ko);
 }
 
 int get_initial_number(unsigned char *grid)
