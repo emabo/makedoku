@@ -32,6 +32,10 @@
 
 #include <ctype.h>
 #include <omp.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "resolve.h"
 
 #if defined(OPENCL) && defined(_OPENMP)
@@ -111,9 +115,28 @@ int open_files(void)
 {
 	int i;
 	char str[512];
+	size_t len = 0;
+	char *line = NULL;
+	struct stat sb;
 
-	if (input_filename && !(input_file = fopen(input_filename, "r")))
-		return -1;
+	if (input_filename) {
+		if (stat(input_filename, &sb) == -1)
+			return -1;
+
+		if (!(input_file = fopen(input_filename, "r")))
+			return -1;
+
+		if (getline(&line, &len, input_file) == -1)
+			return -1;
+
+		rewind(input_file);
+
+		max_sudo = (int) ((long long) sb.st_size / strlen(line));
+		printf("Size, line length = %lld, %d\n", (long long) sb.st_size, strlen(line));
+		printf("Max sudo = %d\n", max_sudo);
+
+		free(line);
+	}
 
 	for (i = 0; i < MAX_OUTPUT_FILES; i++) {
 		sprintf(str, DEFAULT_OUTPUT_FILE_FMT, i);
@@ -210,7 +233,7 @@ int main(int argc, char **argv)
 		max_sudo = atoi(argv[argv_idx+1]);
 		argv_idx += 2;
 		printf("Maximum number of grids: %d\n", max_sudo);
-	} else {
+	} else if (!input_filename) {
 		printf("error: wrong parameter, there should be -n\n");
 		return 1;
 	}
@@ -242,6 +265,13 @@ int main(int argc, char **argv)
 		printf("error: open files\n");
 		goto Error;
 	}
+
+	if (input_filename)
+		printf("Filename = %s\n", input_filename);
+	printf("Random = %d, %d, %d\n", random_gen, initial_rand_num_min, initial_rand_num_max);
+	printf("Iterative = %d\n", iterative);
+	printf("Dim = %dx%d\n", sqx, sqy);
+	printf("Max Sudo = %d\n", max_sudo);
 
 	init_result();
 
@@ -296,7 +326,8 @@ int main(int argc, char **argv)
 
 #ifdef DEBUG
 			printf("%d: solution found: %d\n", num_sudo+1, res);
-			print_table(solution, 1, 0);
+			if (res == 1)
+				print_table(solution, 1, 1);
 #endif
 
 			if (res == 1) {
@@ -304,12 +335,30 @@ int main(int argc, char **argv)
 #pragma omp critical(writeresult)
 #endif
 				{
-					if (sol_depth <= 1)
-						fwrite_table(grid, solution, 0);
-					else if (sol_depth <= 4)
-						fwrite_table(grid, solution, 1);
-					else
-						fwrite_table(grid, solution, 2);
+					if (sqx > 2 && sqy > 2) {
+						if (sol_depth <= 1)
+							fwrite_table(grid, solution, 0);
+						else if (sol_depth <= 4)
+							fwrite_table(grid, solution, 1);
+						else
+							fwrite_table(grid, solution, 2);
+					} else if (sqx == 2 && sqy == 3) {
+						init_num = get_initial_number(grid);
+						if (init_num >= 12)
+							fwrite_table(grid, solution, 0);
+						else if (init_num >= 10)
+							fwrite_table(grid, solution, 1);
+						else
+							fwrite_table(grid, solution, 2);
+					} else {
+						init_num = get_initial_number(grid);
+						if (init_num >= 8)
+							fwrite_table(grid, solution, 0);
+						else if (init_num >= 6)
+							fwrite_table(grid, solution, 1);
+						else
+							fwrite_table(grid, solution, 2);
+					}
 					sol_depth_number[sol_depth]++;
 				}
 			}
